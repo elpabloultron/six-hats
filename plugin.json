@@ -1,0 +1,27 @@
+{
+  "name": "six-hats",
+  "version": "0.1.0",
+  "description": "Six Thinking Hats parallel reasoning plugin for Antigravity",
+  "license": "MIT",
+  "main": "src/six_hats/mcp_server.py",
+  "capabilities": {
+    "tools": true,
+    "agents": true,
+    "slashCommands": [
+      {
+        "name": "six-hats",
+        "description": "Ejecuta el ciclo completo de los 6 sombreros sobre la selección o diff",
+        "handler": "run_full_cycle"
+      },
+      {
+        "name": "hat-critic",
+        "description": "Evaluación rápida paralela: Blanco (Hechos), Negro (Riesgos) y Amarillo (Valor)",
+        "handler": "run_critics"
+      }
+    ]
+  },
+  "mcpServer": {
+    "command": "six-hats",
+    "args": ["mcp"]
+  }
+}

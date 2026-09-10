@@ -1,0 +1,39 @@
+{
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "--silent",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "sixhats-filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "--silent",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/pablo/Escritorio/SIX HATS"
+      ]
+    },
+    "duckdb": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "--silent",
+        "mcp-duckdb-local"
+      ]
+    },
+    "six-hats": {
+      "command": "/home/pablo/Escritorio/SIX HATS/.venv/bin/six-hats",
+      "args": [
+        "mcp"
+      ],
+      "env": {
+        "PYTHONIOENCODING": "utf-8",
+        "PYTHONPATH": "/home/pablo/Escritorio/SIX HATS/src"
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+- id: six-hats-review
+  name: Six Hats Code Review
+  description: Ejecuta la revisión de código multifacética de los Seis Sombreros
+  entry: six-hats review
+  language: python
+  types: [text]
+  stages: [pre-commit]
+
+- id: six-hats-ponytail
+  name: Ponytail Anti-Overengineering Audit
+  description: Audita código aplicando la Escalera de la Pereza contra sobreingeniería
+  entry: six-hats ponytail
+  language: python
+  types: [text]
+  stages: [pre-commit]
