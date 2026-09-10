@@ -1,0 +1,97 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "six_hats_review",
+      "description": "Ejecuta un análisis multifacético y exhaustivo de código usando los 6 sombreros de Edward de Bono en paralelo.\n\nArgs:\n    code_diff: Diff unificado o contenido completo del archivo a evaluar.\n    task_context: Contexto de la tarea, requerimiento arquitectónico o problema a resolver.\n    is_diff: Indica si el input es un diff unificado de git (true) o código completo (false).\n",
+      "parameters": {
+        "properties": {
+          "code_diff": {
+            "title": "Code Diff",
+            "type": "string"
+          },
+          "task_context": {
+            "default": "",
+            "title": "Task Context",
+            "type": "string"
+          },
+          "is_diff": {
+            "default": false,
+            "title": "Is Diff",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code_diff"
+        ],
+        "title": "six_hats_reviewArguments",
+        "type": "object"
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "six_hats_debate",
+      "description": "Lanza un debate adversarial entre Sombrero Negro (Riesgos/Vulnerabilidades) y Sombrero Verde (Innovación) moderado por Sombrero Azul.\n\nArgs:\n    architecture_proposal: Propuesta arquitectónica o técnica a desafiar y evaluar.\n",
+      "parameters": {
+        "properties": {
+          "architecture_proposal": {
+            "title": "Architecture Proposal",
+            "type": "string"
+          }
+        },
+        "required": [
+          "architecture_proposal"
+        ],
+        "title": "six_hats_debateArguments",
+        "type": "object"
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "six_hats_quick_check",
+      "description": "Evaluación rápida focalizada en la tríada crítica: Blanco (Hechos/AST), Negro (Riesgos) y Amarillo (Valor).\n\nArgs:\n    code_diff: Código o diff sobre el cual extraer hechos y contrastar pros y contras.\n",
+      "parameters": {
+        "properties": {
+          "code_diff": {
+            "title": "Code Diff",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code_diff"
+        ],
+        "title": "six_hats_quick_checkArguments",
+        "type": "object"
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "six_hats_ponytail_audit",
+      "description": "Ejecuta una auditoría estricta contra la Escalera de la Pereza de Ponytail para detectar sobreingeniería y código superfluo.\n\nArgs:\n    code: Contenido del archivo o fragmento de código a auditar.\n    threshold: Umbral máximo admisible de sobreingeniería (por defecto 25.0 %).\n",
+      "parameters": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "threshold": {
+            "default": 25.0,
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "six_hats_ponytail_auditArguments",
+        "type": "object"
+      }
+    }
+  }
+]

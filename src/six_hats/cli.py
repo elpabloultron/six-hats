@@ -12,6 +12,8 @@ from six_hats.core.orchestrator import SixHatsOrchestrator
 from six_hats.tools.git_utils import get_git_diff
 from six_hats.tools.ponytail_rules import audit_ponytail
 from six_hats.tools.sarif_exporter import export_to_sarif_file
+from six_hats.tools.exporter import export_tools_by_format
+from six_hats.tools.plugin_installer import install_plugin
 
 console = Console()
 
@@ -297,6 +299,104 @@ def debate(proposal: str):
             border_style="cyan",
         )
     )
+
+
+@cli.command(name="export-tools")
+@click.option(
+    "--format",
+    "-f",
+    "format_name",
+    type=click.Choice(["openai", "hermes", "hermes-chatml", "claude", "mcp"], case_sensitive=False),
+    default="openai",
+    help="Formato de salida para esquemas de herramientas.",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    default=None,
+    help="Ruta de destino opcional para guardar el esquema generado.",
+)
+def export_tools_cmd(format_name: str, output: str | None):
+    """Exporta las herramientas de los 6 Sombreros para Claude, OpenAI Codex, Hermes y entornos Multi-Agente."""
+    try:
+        content = export_tools_by_format(format_name)
+    except Exception as e:
+        console.print(f"[bold red]Error exportando herramientas:[/bold red] {e}")
+        sys.exit(1)
+
+    if output:
+        out_path = Path(output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(content + "\n", encoding="utf-8")
+        console.print(f"[bold green]✓ Herramientas exportadas exitosamente en formato '{format_name}' a:[/bold green] {output}")
+    else:
+        click.echo(content)
+
+
+@cli.group()
+def plugin():
+    """Gestión e instalación de six-hats como plugin en Claude Code, Cursor, VS Code y Antigravity."""
+    pass
+
+
+@plugin.command(name="install")
+@click.argument(
+    "target",
+    type=click.Choice(["claude", "cursor", "vscode", "antigravity", "all"], case_sensitive=False),
+    default="all",
+)
+@click.option(
+    "--scope",
+    "-s",
+    type=click.Choice(["project", "global"], case_sensitive=False),
+    default="project",
+    help="Ámbito de instalación: 'project' (directorio actual) o 'global' (directorio de usuario).",
+)
+@click.option(
+    "--method",
+    "-m",
+    type=click.Choice(["uvx", "local"], case_sensitive=False),
+    default="uvx",
+    help="Método de ejecución: 'uvx' (portátil desde git) o 'local' (entorno python actual).",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Simula la instalación sin modificar archivos en disco.",
+)
+def plugin_install(target: str, scope: str, method: str, dry_run: bool):
+    """Instala y registra automáticamente el servidor MCP en los clientes especificados."""
+    dry_txt = " [Simulación / Dry-run]" if dry_run else ""
+    console.print(Panel.fit(f"[bold blue]Instalando six-hats como plugin ({target}){dry_txt}[/bold blue]"))
+
+    results = install_plugin(
+        target=target,
+        scope=scope,
+        method=method,
+        cwd=Path.cwd(),
+        dry_run=dry_run,
+    )
+
+    table = Table(title="Registro de Plugins MCP", border_style="cyan")
+    table.add_column("Cliente / Entorno", style="bold")
+    table.add_column("Ámbito")
+    table.add_column("Método", style="yellow")
+    table.add_column("Archivo Configurado", style="dim")
+    table.add_column("Estado", style="green")
+
+    for r in results:
+        table.add_row(
+            r["target"].capitalize(),
+            r["scope"],
+            r["method"],
+            r["filepath"],
+            r["action"],
+        )
+
+    console.print(table)
+    if target in ("claude", "all"):
+        console.print("[dim]💡 En Claude Code también puedes usar: [bold]claude mcp add six-hats uvx --from git+https://github.com/elpabloultron/six-hats.git six-hats mcp[/bold][/dim]")
 
 
 @cli.command()

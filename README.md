@@ -236,5 +236,57 @@ El directorio [`subagents/`](file:///home/pablo/Escritorio/SIX%20HATS/subagents/
 * [`subagents/green_hat.md`](file:///home/pablo/Escritorio/SIX%20HATS/subagents/green_hat.md): Especialista en pensamiento lateral e innovación.
 * [`subagents/black_hat.md`](file:///home/pablo/Escritorio/SIX%20HATS/subagents/black_hat.md): Auditor adversarial de seguridad y resiliencia.
 * [`subagents/red_hat.md`](file:///home/pablo/Escritorio/SIX%20HATS/subagents/red_hat.md): Auditor de ergonomía a las 3:00 AM y veto Ponytail.
-* [`subagents/blue_hat.md`](file:///home/pablo/Escritorio/SIX%20HATS/subagents/blue_hat.md): Orquestador, mediador de compromisos y generador de parches.
+* [`subagents/blue_hat.md`](file:///home/pablo/Escritorio/SIX%20HATS/subagents/blue_hat.md): Especialista en mediación de compromisos y generador de parches.
 * [`subagents/orchestrator.md`](file:///home/pablo/Escritorio/SIX%20HATS/subagents/orchestrator.md): Coordinador de la sesión multi-agente en DAG.
+
+---
+
+## 9. Ecosistema Multi-Plataforma: Claude Code, CLI, Multi-Agente, Hermes y Codex
+
+`six-hats` está diseñado para integrarse de forma universal con cualquier asistente de desarrollo, CLI o arquitectura multi-agente:
+
+### A. Claude Code (CLI de Anthropic)
+Claude Code detecta y utiliza automáticamente `six-hats` mediante el manifiesto [`.mcp.json`](file:///home/pablo/Escritorio/SIX%20HATS/.mcp.json) en la raíz o mediante el comando oficial:
+```bash
+claude mcp add six-hats uvx --from git+https://github.com/elpabloultron/six-hats.git six-hats mcp
+```
+El archivo [`CLAUDE.md`](file:///home/pablo/Escritorio/SIX%20HATS/CLAUDE.md) incluido en el repositorio instruye automáticamente al agente Claude para que aplique el protocolo de los 6 Sombreros e invoque las herramientas analíticas.
+
+### B. Autoconfiguración mediante el CLI de Six Hats
+Puedes registrar automáticamente el servidor MCP en tus clientes locales favoritos:
+```bash
+# Instalar en Claude Code, Cursor y VS Code a nivel de proyecto:
+six-hats plugin install all --scope project
+
+# O configurar individualmente en tu entorno global:
+six-hats plugin install claude --scope global
+six-hats plugin install cursor --scope global
+six-hats plugin install vscode --scope global
+```
+
+### C. Exportación Dinámica de Esquemas (Function Calling)
+Genera esquemas de herramientas sincronizados para cualquier framework o API:
+```bash
+# Formato OpenAI / Codex / Assistants API:
+six-hats export-tools --format openai --output tools_openai.json
+
+# Formato Anthropic Claude:
+six-hats export-tools --format claude --output tools_claude.json
+
+# Formato Nous Hermes (ChatML):
+six-hats export-tools --format hermes --output tools_hermes.json
+six-hats export-tools --format hermes-chatml
+```
+
+### D. Modelos Nous Hermes y LLMs Locales (vLLM / Ollama / LM Studio)
+El directorio [`integrations/hermes/`](file:///home/pablo/Escritorio/SIX%20HATS/integrations/hermes/) proporciona:
+* `hermes_tools.json`: Esquema completo de herramientas.
+* `system_prompt.txt`: System prompt con bloques `<tools>` y directrices de De Bono.
+* `hermes_runner_example.py`: Ejemplo ejecutable en Python.
+
+### E. OpenAI Codex y Frameworks Multi-Agente (LangGraph / CrewAI / AutoGen)
+El directorio [`integrations/`](file:///home/pablo/Escritorio/SIX%20HATS/integrations/) incluye plantillas listas para producción:
+* [`integrations/openai_codex/agent_runner_example.py`](file:///home/pablo/Escritorio/SIX%20HATS/integrations/openai_codex/agent_runner_example.py): Invocación nativa con OpenAI Function Calling.
+* [`integrations/multi_agent/langgraph_six_hats.py`](file:///home/pablo/Escritorio/SIX%20HATS/integrations/multi_agent/langgraph_six_hats.py): Nodo de deliberación y compuerta de aprobación para grafos multi-agente.
+* [`integrations/multi_agent/README.md`](file:///home/pablo/Escritorio/SIX%20HATS/integrations/multi_agent/README.md): Guía detallada de integración arquitectónica.
+

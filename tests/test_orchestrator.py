@@ -452,4 +452,98 @@ def test_git_churn_and_coverage_graceful():
     assert cov is None
 
 
+def test_export_tools_schemas():
+    """Fase Plugin: Prueba la exportación de esquemas en formatos OpenAI, Claude, Hermes y MCP."""
+    from six_hats.tools.exporter import (
+        export_openai_tools,
+        export_claude_tools,
+        export_hermes_tools,
+        export_mcp_tools,
+        build_hermes_chatml_block,
+        export_tools_by_format,
+    )
+
+    openai_tools = export_openai_tools()
+    assert len(openai_tools) == 4
+    assert all(t["type"] == "function" for t in openai_tools)
+    names = [t["function"]["name"] for t in openai_tools]
+    assert "six_hats_review" in names
+    assert "six_hats_ponytail_audit" in names
+
+    claude_tools = export_claude_tools()
+    assert len(claude_tools) == 4
+    assert all("input_schema" in t for t in claude_tools)
+
+    mcp_tools = export_mcp_tools()
+    assert len(mcp_tools) == 4
+    assert all("inputSchema" in t for t in mcp_tools)
+
+    chatml = build_hermes_chatml_block()
+    assert chatml.startswith("<tools>\n")
+    assert chatml.endswith("</tools>")
+
+    # Formatos por string
+    assert "six_hats_review" in export_tools_by_format("openai")
+    assert "six_hats_review" in export_tools_by_format("claude")
+    assert "six_hats_review" in export_tools_by_format("hermes")
+    assert "<tools>" in export_tools_by_format("hermes-chatml")
+    assert "inputSchema" in export_tools_by_format("mcp")
+
+    with pytest.raises(ValueError):
+        export_tools_by_format("formato_invalido")
+
+
+def test_plugin_installer_execution(tmp_path):
+    """Fase Plugin: Prueba la instalación y merge de configuraciones MCP en Cursor, Claude y VSCode."""
+    from six_hats.tools.plugin_installer import install_plugin
+
+    # Prueba simulación (dry_run)
+    res_dry = install_plugin("all", scope="project", method="uvx", cwd=tmp_path, dry_run=True)
+    assert len(res_dry) == 3
+    assert not (tmp_path / ".mcp.json").exists()
+
+    # Prueba escritura real en tmp_path
+    res_real = install_plugin("all", scope="project", method="uvx", cwd=tmp_path, dry_run=False)
+    assert len(res_real) == 3
+
+    mcp_claude = tmp_path / ".mcp.json"
+    mcp_cursor = tmp_path / ".cursor" / "mcp.json"
+    mcp_vscode = tmp_path / ".vscode" / "mcp.json"
+
+    assert mcp_claude.exists()
+    assert mcp_cursor.exists()
+    assert mcp_vscode.exists()
+
+    claude_data = json.loads(mcp_claude.read_text(encoding="utf-8"))
+    assert "six-hats" in claude_data["mcpServers"]
+    assert claude_data["mcpServers"]["six-hats"]["command"] == "uvx"
+
+
+def test_cli_plugin_and_export_commands(tmp_path):
+    """Fase Plugin: Prueba los subcomandos de CLI 'export-tools' y 'plugin install'."""
+    from click.testing import CliRunner
+    from six_hats.cli import cli
+
+    runner = CliRunner()
+
+    # Prueba export-tools a stdout
+    res_exp = runner.invoke(cli, ["export-tools", "--format", "openai"])
+    assert res_exp.exit_code == 0
+    assert "six_hats_review" in res_exp.output
+
+    # Prueba export-tools guardando en archivo
+    out_file = tmp_path / "custom_tools.json"
+    res_save = runner.invoke(cli, ["export-tools", "--format", "claude", "--output", str(out_file)])
+    assert res_save.exit_code == 0
+    assert out_file.exists()
+    assert "six_hats_ponytail_audit" in out_file.read_text(encoding="utf-8")
+
+    # Prueba plugin install --dry-run
+    res_plugin = runner.invoke(cli, ["plugin", "install", "claude", "--dry-run"])
+    assert res_plugin.exit_code == 0
+    assert "Claude" in res_plugin.output
+    assert "dry_run" in res_plugin.output
+
+
+
 
