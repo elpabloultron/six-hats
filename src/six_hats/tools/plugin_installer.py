@@ -20,12 +20,10 @@ def get_server_definition(method: str = "uvx") -> dict[str, Any]:
             },
         }
     else:
-        # Método 'uvx' portátil
+        # Método 'uvx' oficial desde PyPI
         return {
             "command": "uvx",
             "args": [
-                "--from",
-                "git+https://github.com/elpabloultron/six-hats.git",
                 "six-hats",
                 "mcp",
             ],

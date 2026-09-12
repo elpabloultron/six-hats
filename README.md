@@ -1,5 +1,9 @@
 # six-hats: Motor Multi-Agente de Razonamiento Paralelo y Servidor MCP
 
+[![PyPI version](https://img.shields.io/pypi/v/six-hats.svg?color=blue)](https://pypi.org/project/six-hats/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/six-hats.svg)](https://pypi.org/project/six-hats/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+
 Motor multi-agente de deliberación y razonamiento paralelo basado en la metodología de los **Seis Sombreros para Pensar** (*Six Thinking Hats*) de Edward de Bono, diseñado para revisión de código, diseño arquitectónico, auditoría adversarial y depuración en Antigravity IDE y terminales CLI.
 
 ---
@@ -64,10 +68,28 @@ A diferencia de servidores que encapsulan llamadas fijas a modelos de nube (*ant
 
 ## 3. Instalación y configuración
 
-### Instalación local con `uv`
+### Ejecución instantánea con `uvx` (Recomendado, sin instalación previa)
 
 ```bash
-# Crear entorno virtual e instalar en modo editable con herramientas de desarrollo
+# Ejecutar revisión de código directamente desde PyPI
+uvx six-hats review archivo.py
+
+# Ejecutar auditoría anti-sobreingeniería Ponytail
+uvx six-hats ponytail archivo.py
+```
+
+### Instalación vía `pip` desde PyPI
+
+```bash
+pip install six-hats
+```
+
+### Instalación local para desarrollo con `uv`
+
+```bash
+# Clonar, crear entorno virtual e instalar en modo editable
+git clone https://github.com/elpabloultron/six-hats.git
+cd six-hats
 uv venv --python 3.13
 source .venv/bin/activate
 uv pip install -e ".[dev]"
@@ -76,7 +98,7 @@ uv pip install -e ".[dev]"
 ### Ejecución de la suite de pruebas
 
 ```bash
-.venv/bin/pytest tests/ -v
+pytest tests/ -v
 ```
 
 ---

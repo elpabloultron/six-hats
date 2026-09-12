@@ -10,7 +10,7 @@ Como asistente que opera a través de **Claude Code**, debes integrar metódicam
 
 El servidor MCP `six-hats` está configurado y accesible. Si ejecutas en un entorno nuevo, puedes añadirlo con:
 ```bash
-claude mcp add six-hats uvx --from git+https://github.com/elpabloultron/six-hats.git six-hats mcp
+claude mcp add six-hats uvx six-hats mcp
 ```
 
 ### Catálogo de Herramientas MCP
