@@ -1,0 +1,35 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  pypi-publish:
+    name: Publicar en PyPI
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Obligatorio para Trusted Publishing (OIDC) en PyPI
+      contents: read
+    environment:
+      name: pypi
+      url: https://pypi.org/p/six-hats
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Construir paquetes de distribución
+        run: uv build
+
+      - name: Publicar en PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          skip-existing: true

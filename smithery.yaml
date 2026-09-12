@@ -1,0 +1,13 @@
+# Configuración de Smithery para six-hats
+# https://smithery.ai/docs
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction:
+    package: "six-hats"
+    command: "uvx"
+    args:
+      - "six-hats"
+      - "mcp"
