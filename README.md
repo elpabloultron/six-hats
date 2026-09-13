@@ -1,6 +1,7 @@
 # six-hats: Motor Multi-Agente de Razonamiento Paralelo y Servidor MCP
 
 [![PyPI version](https://img.shields.io/pypi/v/six-hats.svg?color=blue)](https://pypi.org/project/six-hats/)
+[![Smithery](https://img.shields.io/badge/Smithery-six--hats-FF5601)](https://smithery.ai/servers/pablobenavidesjorquera/six-hats)
 [![Python Versions](https://img.shields.io/pypi/pyversions/six-hats.svg)](https://pypi.org/project/six-hats/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
@@ -82,6 +83,16 @@ uvx six-hats ponytail archivo.py
 
 ```bash
 pip install six-hats
+```
+
+### Instalación con Smithery (para Claude Desktop, Cursor y agentes)
+
+```bash
+# Para Claude Desktop
+npx -y @smithery/cli install pablobenavidesjorquera/six-hats --client claude
+
+# Para Cursor
+npx -y @smithery/cli install pablobenavidesjorquera/six-hats --client cursor
 ```
 
 ### Instalación local para desarrollo con `uv`
