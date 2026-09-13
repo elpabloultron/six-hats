@@ -1,0 +1,105 @@
+name: "Six Hats Deliberation Action"
+description: "Revisión multidimensional de código y PRs con la metodología de los Seis Sombreros de De Bono, filtro Ponytail y SARIF."
+author: "Pablo Benavides Jorquera <pablo@antigravity.ai>"
+branding:
+  icon: "check-circle"
+  color: "blue"
+
+inputs:
+  path:
+    description: "Ruta del archivo o directorio a analizar."
+    required: false
+    default: "."
+  git-diff:
+    description: "Analizar únicamente el diff del Pull Request o commit."
+    required: false
+    default: "false"
+  fail-on:
+    description: "Nivel de severidad para fallar el paso CI: CRITICAL, HIGH, MEDIUM o BLOAT."
+    required: false
+    default: ""
+  sarif:
+    description: "Ruta de archivo para exportar el informe SARIF v2.1.0."
+    required: false
+    default: "six-hats-report.sarif"
+  html:
+    description: "Ruta de archivo para exportar el reporte interactivo HTML autónomo."
+    required: false
+    default: "six-hats-dashboard.html"
+  github-token:
+    description: "Token de GitHub (secrets.GITHUB_TOKEN) para publicar el reporte en Step Summary y comentarios."
+    required: false
+    default: ""
+
+outputs:
+  verdict:
+    description: "Dictamen del Sombrero Azul: APPROVE, CONDITIONAL o REJECT."
+    value: ${{ steps.run-six-hats.outputs.verdict }}
+  sarif-path:
+    description: "Ruta donde se generó el informe SARIF."
+    value: ${{ inputs.sarif }}
+  html-path:
+    description: "Ruta donde se generó el informe HTML."
+    value: ${{ inputs.html }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configurar entorno uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+
+    - name: Instalar six-hats
+      shell: bash
+      run: |
+        uv tool install --upgrade six-hats
+
+    - name: Ejecutar Six Hats Review
+      id: run-six-hats
+      shell: bash
+      run: |
+        ARGS=""
+        if [ "${{ inputs.git-diff }}" = "true" ]; then
+          ARGS="$ARGS --git-diff"
+        elif [ -n "${{ inputs.path }}" ] && [ "${{ inputs.path }}" != "." ]; then
+          ARGS="$ARGS ${{ inputs.path }}"
+        else
+          ARGS="$ARGS --git-diff"
+        fi
+
+        if [ -n "${{ inputs.sarif }}" ]; then
+          ARGS="$ARGS --sarif ${{ inputs.sarif }}"
+        fi
+
+        if [ -n "${{ inputs.html }}" ]; then
+          ARGS="$ARGS --html ${{ inputs.html }}"
+        fi
+
+        if [ -n "${{ inputs.fail-on }}" ]; then
+          ARGS="$ARGS --fail-on ${{ inputs.fail-on }}"
+        fi
+
+        echo "Ejecutando: six-hats review $ARGS"
+        six-hats review $ARGS || EXIT_CODE=$?
+
+        if [ -f "${{ inputs.html }}" ]; then
+          echo "html-exists=true" >> "$GITHUB_OUTPUT"
+        fi
+
+        exit ${EXIT_CODE:-0}
+
+    - name: Publicar artefacto HTML Dashboard
+      if: always() && inputs.html != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: six-hats-dashboard
+        path: ${{ inputs.html }}
+        if-no-files-found: ignore
+
+    - name: Publicar informe SARIF en GitHub Code Scanning
+      if: always() && inputs.sarif != ''
+      uses: github/codeql-action/upload-sarif@v3
+      continue-on-error: true
+      with:
+        sarif_file: ${{ inputs.sarif }}

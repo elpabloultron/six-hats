@@ -179,12 +179,43 @@ six-hats mcp
 six-hats review src/main.py --json
 ```
 
+### Dashboard interactivo HTML autónomo (Radar SVG y Cero CDNs)
+
+Genera un informe visual completo y moderno con gráfico de radar vectorial en SVG puro:
+
+```bash
+six-hats review src/main.py --html reporte.html
+six-hats review --git-diff --html diff_review.html
+```
+
+### Integración de grafos y Graphify (`--with-graph`)
+
+Enriquece el análisis estructural detectando automáticamente grafos de conocimiento generados por **Graphify** (`graphify-out/graph.json`) para advertir sobre *god nodes* y excesivo acoplamiento, o generando un subgrafo AST de dependencias de respaldo:
+
+```bash
+six-hats review src/main.py --html reporte.html --with-graph
+```
+
 ### Exportación a estándar OASIS SARIF v2.1.0
 
 Genera informes SARIF compatibles con GitHub Code Scanning, GitLab SAST y Azure DevOps:
 
 ```bash
 six-hats review src/main.py --sarif report.sarif
+```
+
+### GitHub Action oficial para GitHub Marketplace
+
+Incorpora la deliberación de Seis Sombreros en tus Pull Requests en cualquier repositorio:
+
+```yaml
+- name: Deliberación Six Hats en PR
+  uses: elpabloultron/six-hats@main
+  with:
+    path: 'src/'
+    fail-on: 'high'
+    html: 'six-hats-dashboard.html'
+    sarif: 'six-hats-report.sarif'
 ```
 
 ### Compuertas de calidad con `--fail-on`

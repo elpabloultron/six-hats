@@ -1,0 +1,22 @@
+name: Action Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-action:
+    name: Probar Six Hats Action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Ejecutar Six Hats Action Local
+        uses: ./
+        with:
+          path: "src/six_hats/core/models.py"
+          sarif: "test-report.sarif"
+          html: "test-dashboard.html"

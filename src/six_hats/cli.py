@@ -14,6 +14,8 @@ from six_hats.tools.ponytail_rules import audit_ponytail
 from six_hats.tools.sarif_exporter import export_to_sarif_file
 from six_hats.tools.exporter import export_tools_by_format
 from six_hats.tools.plugin_installer import install_plugin
+from six_hats.tools.html_reporter import export_to_html_file
+from six_hats.tools.graph_analyzer import detect_codebase_graph
 
 console = Console()
 
@@ -30,6 +32,8 @@ def cli():
 @click.option("--context", "-c", default="", help="Contexto adicional del requerimiento o problema.")
 @click.option("--json-output", "--json", "json_mode", is_flag=True, help="Emite salida estructurada pura en JSON para CI/CD.")
 @click.option("--sarif", type=click.Path(), default=None, help="Ruta de destino para exportar informe SARIF v2.1.0.")
+@click.option("--html-report", "--html", "html_path", type=click.Path(), default=None, help="Ruta de destino para exportar informe visual HTML interactivo.")
+@click.option("--with-graph", is_flag=True, help="Enriquece el análisis con la topología de grafo (Graphify o subgrafo AST).")
 @click.option("--fail-on", type=click.Choice(["CRITICAL", "HIGH", "MEDIUM", "BLOAT"], case_sensitive=False), default=None, help="Falla con código 1 ante hallazgos de severidad especificada.")
 def review(
     filepath: str | None,
@@ -37,6 +41,8 @@ def review(
     context: str,
     json_mode: bool,
     sarif: str | None,
+    html_path: str | None,
+    with_graph: bool,
     fail_on: str | None,
 ):
     """Ejecuta una revisión completa multifacética de 6 Sombreros sobre un archivo o git diff."""
@@ -70,13 +76,24 @@ def review(
         )
     )
 
-    # 1. Exportación SARIF si se solicitó
+    # 1. Análisis de grafo si se requiere
+    graph_data = None
+    if html_path or with_graph:
+        graph_data = detect_codebase_graph(code_content=code_content)
+
+    # 2. Exportación SARIF si se solicitó
     if sarif:
         export_to_sarif_file(result, sarif, filepath=target_name)
         if not json_mode:
             console.print(f"[green]✓ Informe SARIF v2.1.0 exportado exitosamente a:[/green] {sarif}")
 
-    # 2. Salida JSON pura para pipelines
+    # 3. Exportación HTML si se solicitó
+    if html_path:
+        export_to_html_file(result, html_path, filepath=target_name, graph_data=graph_data)
+        if not json_mode:
+            console.print(f"[green]✓ Dashboard visual HTML exportado exitosamente a:[/green] {html_path}")
+
+    # 4. Salida JSON pura para pipelines
     if json_mode:
         click.echo(json.dumps(result.model_dump(), indent=2, ensure_ascii=False))
     else:

@@ -545,5 +545,34 @@ def test_cli_plugin_and_export_commands(tmp_path):
     assert "dry_run" in res_plugin.output
 
 
+def test_cli_review_with_html_and_sarif(tmp_path):
+    """Prueba la invocación de review con exportación combinada de HTML y SARIF."""
+    from click.testing import CliRunner
+    from six_hats.cli import cli
+
+    sample_file = tmp_path / "calc.py"
+    sample_file.write_text("def sumar(a, b): return a + b\n", encoding="utf-8")
+
+    html_out = tmp_path / "report.html"
+    sarif_out = tmp_path / "report.sarif"
+
+    runner = CliRunner()
+    result = runner.invoke(cli, [
+        "review",
+        str(sample_file),
+        "--html",
+        str(html_out),
+        "--sarif",
+        str(sarif_out),
+    ])
+
+    assert result.exit_code == 0
+    assert html_out.exists()
+    assert sarif_out.exists()
+    assert "Dashboard visual HTML exportado" in result.output
+    assert "Informe SARIF v2.1.0 exportado" in result.output
+
+
+
 
 
