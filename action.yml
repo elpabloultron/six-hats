@@ -53,7 +53,13 @@ runs:
     - name: Instalar six-hats
       shell: bash
       run: |
-        uv tool install --upgrade six-hats
+        if [ -f "${{ github.action_path }}/pyproject.toml" ]; then
+          echo "Instalando six-hats directamente desde la acción (${{ github.action_path }})..."
+          uv tool install --upgrade "${{ github.action_path }}"
+        else
+          echo "Instalando six-hats desde PyPI..."
+          uv tool install --upgrade six-hats
+        fi
 
     - name: Ejecutar Six Hats Review
       id: run-six-hats
