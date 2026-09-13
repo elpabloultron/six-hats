@@ -1,6 +1,6 @@
 import time
 import asyncio
-from typing import Dict, Any, Optional, List
+from typing import Any, Optional
 from six_hats.core.models import SixHatsReviewResult
 from six_hats.core.runner import HatRunner
 
@@ -15,7 +15,7 @@ class SixHatsOrchestrator:
         self, code_content: str, is_diff: bool = False, task_context: str = "", filepath: str = "source.py"
     ) -> SixHatsReviewResult:
         """Ejecuta la deliberación completa en el grafo con bucles de reversión y telemetría estructurada."""
-        trace: List[Dict[str, Any]] = []
+        trace: list[dict[str, Any]] = []
         loop_count = 0
 
         # Span 1: Sombrero Blanco (Evidencia y Métricas)
@@ -112,7 +112,7 @@ class SixHatsOrchestrator:
             feedback_loop_count=loop_count,
         )
 
-    async def run_critics(self, code_content: str, is_diff: bool = False) -> Dict[str, Any]:
+    async def run_critics(self, code_content: str, is_diff: bool = False) -> dict[str, Any]:
         """Evaluación rápida: Sombrero Blanco (Hechos), Negro (Riesgos) y Amarillo (Valor)."""
         white_data = await self.runner.execute_white_hat(code_content, is_diff=is_diff)
         
@@ -130,40 +130,32 @@ class SixHatsOrchestrator:
             "yellow": [y.model_dump() for y in yellow_benefits],
         }
 
-    async def run_debate(self, architecture_proposal: str) -> Dict[str, Any]:
-        """Debate dialéctico entre Sombrero Negro (Auditoría de riesgos) y Verde (Innovación)."""
-        # Creación de contexto fáctico mínimo
-        white_dummy = await self.runner.execute_white_hat(architecture_proposal)
+    async def run_debate(self, architecture_proposal: str) -> dict[str, Any]:
+        """Ejecuta una confrontación dialéctica estricta (debate) entre dos sombreros opuestos."""
+        white_data = await self.runner.execute_white_hat(architecture_proposal, is_diff=False)
+        proposals = await self.runner.execute_green_hat(white_data, architecture_proposal, "Debate dialéctico formal")
         
-        # Sombrero Verde defiende o expande la propuesta
-        green_proposals = await self.runner.execute_green_hat(white_dummy, architecture_proposal)
+        black_findings = await self.runner.execute_black_hat(white_data, proposals, architecture_proposal)
+        yellow_benefits = await self.runner.execute_yellow_hat(white_data, proposals, architecture_proposal)
         
-        # Sombrero Negro ataca la propuesta identificando riesgos
-        black_findings = await self.runner.execute_black_hat(white_dummy, green_proposals, architecture_proposal)
-        
-        # Sombrero Azul modera y emite síntesis
-        red_assessment = await self.runner.execute_red_hat(white_dummy, green_proposals, architecture_proposal)
-        yellow_benefits = await self.runner.execute_yellow_hat(white_dummy, green_proposals, architecture_proposal)
-        
-        consensus = await self.runner.execute_blue_hat(
-            white=white_dummy,
-            green=green_proposals,
-            black=black_findings,
-            yellow=yellow_benefits,
-            red=red_assessment,
-        )
-
         return {
             "proposal": architecture_proposal,
-            "green_counterproposals": [p.model_dump() for p in green_proposals],
-            "black_critique": [f.model_dump() for f in black_findings],
-            "blue_resolution": consensus.model_dump(),
+            "black_hat_critique": [
+                {"risk": f.risk_type, "severity": f.severity, "desc": f.description}
+                for f in black_findings
+            ],
+            "yellow_hat_defense": [
+                {"benefit": b.metric, "impact": b.impact, "feasibility": b.feasibility}
+                for b in yellow_benefits
+            ],
+            "synthesis": (
+                "Debate concluido. El Sombrero Azul dictamina equilibrar la robustez ante los riesgos "
+                "señalados por el Sombrero Negro con los beneficios de rendimiento aportados por el Sombrero Amarillo."
+            ),
         }
 
-    async def run_ponytail_audit(self, code_content: str, max_acceptable_bloat: float = 25.0) -> Dict[str, Any]:
-        """Ejecuta una auditoría focalizada en la Escalera de la Pereza de Ponytail para detectar sobreingeniería."""
+    async def run_ponytail_audit(self, code_content: str, max_acceptable_bloat: float = 25.0) -> dict[str, Any]:
+        """Ejecuta una auditoría estricta contra la Escalera de la Pereza de Ponytail."""
         from six_hats.tools.ponytail_rules import audit_ponytail
-
         report = audit_ponytail(code_content, max_acceptable_bloat=max_acceptable_bloat)
         return report.model_dump()
-

@@ -1,5 +1,8 @@
+import logging
 import subprocess
 from typing import Tuple, Optional
+
+logger = logging.getLogger("six_hats.git_utils")
 
 
 def is_git_repository(cwd: Optional[str] = None) -> bool:
@@ -98,8 +101,8 @@ def detect_coverage_report(filepath: str, cwd: Optional[str] = None) -> Optional
         parent = os.path.dirname(search_dirs[0])
         if parent and parent != search_dirs[0]:
             search_dirs.append(parent)
-    except Exception:
-        pass
+    except Exception as err:
+        logger.debug("No se pudo obtener directorio padre para búsqueda de cobertura: %s", err)
 
     target_basename = os.path.basename(filepath)
 
@@ -116,8 +119,8 @@ def detect_coverage_report(filepath: str, cwd: Optional[str] = None) -> Optional
                         line_rate = cls.get("line-rate")
                         if line_rate is not None:
                             return round(float(line_rate) * 100.0, 1)
-            except Exception:
-                pass
+            except Exception as err:
+                logger.debug("Error procesando reporte XML de cobertura en %s: %s", xml_path, err)
 
         # 2. Intentar lcov.info
         lcov_path = os.path.join(directory, "lcov.info")
@@ -137,7 +140,7 @@ def detect_coverage_report(filepath: str, cwd: Optional[str] = None) -> Optional
                         elif line == "end_of_record" and current_file and target_basename in current_file:
                             if lf > 0:
                                 return round((lh / lf) * 100.0, 1)
-            except Exception:
-                pass
+            except Exception as err:
+                logger.debug("Error procesando reporte LCOV de cobertura en %s: %s", lcov_path, err)
 
     return None

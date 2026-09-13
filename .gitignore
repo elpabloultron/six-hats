@@ -29,3 +29,8 @@ dist/
 *.swo
 *~
 .DS_Store
+
+# Reportes generados localmente
+*.sarif
+report_*.html
+audit_*.html

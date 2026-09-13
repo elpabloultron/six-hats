@@ -6,8 +6,11 @@ CWEs, fallos de inyección, deserialización insegura y exposición de secretos.
 
 import ast
 import re
+import logging
 from typing import List
 from six_hats.core.models import BlackHatFinding
+
+logger = logging.getLogger("six_hats.security_scanner")
 
 
 SECRET_PATTERNS = [
@@ -173,7 +176,9 @@ def scan_security_vulnerabilities(code_content: str) -> List[BlackHatFinding]:
         for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
                 val = node.value.strip()
-                if len(val) >= 24 and not val.startswith("http") and not " " in val:
+                # Descartar URLs, expresiones regulares y cadenas con espacios
+                is_regex = any(r in val for r in ("(?:", "(?P", "\\d", "\\w", "\\s", "(?i)", ".*", ".+", "[a-z", "[A-Z"))
+                if len(val) >= 24 and not val.startswith("http") and " " not in val and not is_regex:
                     entropy = calculate_shannon_entropy(val)
                     if entropy >= 4.5:
                         findings.append(
@@ -189,8 +194,8 @@ def scan_security_vulnerabilities(code_content: str) -> List[BlackHatFinding]:
                                 remediation="Extraer el secreto a variables de entorno o gestor de credenciales (KMS / Vault).",
                             )
                         )
-    except SyntaxError:
-        pass
+    except SyntaxError as err:
+        logger.debug("Código no parseable como AST de Python: %s", err)
 
     # 2. Detección de Secretos y Tokens con patrones Gitleaks
     for line_idx, line in enumerate(lines, 1):
@@ -207,14 +212,15 @@ def scan_security_vulnerabilities(code_content: str) -> List[BlackHatFinding]:
                     )
                 )
 
-    # 3. Path Traversal
-    if "../" in code_content or "..\\" in code_content:
+    # 3. Path Traversal en operaciones de filesystem (CWE-22)
+    traversal_pattern = re.compile(r"""(?:open|Path|read_text|write_text|os\.(?:path|listdir|walk|remove))\s*\([^)]*['"][^'"]*(\.\./|\.\.\\)""")
+    if traversal_pattern.search(code_content):
         findings.append(
             BlackHatFinding(
                 severity="MEDIUM",
                 risk_type="Riesgo de Salto de Directorio / Path Traversal (CWE-22)",
-                location="Uso de secuencia relativa «../» en rutas",
-                description="La manipulación de rutas sin validar con Path.resolve() o os.path.abspath puede exponer archivos sensibles del sistema operativo.",
+                location="Uso de secuencia relativa «../» en operaciones de archivo",
+                description="La manipulación de rutas con «../» sin validar con Path.resolve() o os.path.abspath puede exponer archivos sensibles del sistema operativo.",
             )
         )
 

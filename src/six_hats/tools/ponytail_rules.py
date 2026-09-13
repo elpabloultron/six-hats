@@ -6,8 +6,11 @@ estándar, código especulativo (YAGNI) y complejidad accidental.
 
 import ast
 import re
+import logging
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger("six_hats.ponytail_rules")
 
 
 class PonytailViolation(BaseModel):
@@ -341,8 +344,8 @@ def audit_ponytail(code_content: str, max_acceptable_bloat: float = 25.0) -> Pon
                     )
                 )
 
-    except SyntaxError:
-        pass
+    except SyntaxError as err:
+        logger.debug("El contenido no se pudo parsear como AST de Python: %s", err)
 
     # 2. Peldaño 3: Stdlib reimplementation
     violations.extend(scan_stdlib_reimplements(code_content))
