@@ -138,16 +138,34 @@ class SixHatsOrchestrator:
         black_findings = await self.runner.execute_black_hat(white_data, proposals, architecture_proposal)
         yellow_benefits = await self.runner.execute_yellow_hat(white_data, proposals, architecture_proposal)
         
+        black_list = [
+            {"risk": f.risk_type, "severity": f.severity, "desc": f.description, "description": f.description}
+            for f in black_findings
+        ]
+        green_list = [
+            {"name": p.name, "paradigm": p.paradigm, "tradeoff": p.tradeoff}
+            for p in proposals
+        ]
+        yellow_list = [
+            {"benefit": b.metric, "impact": b.impact, "feasibility": b.feasibility}
+            for b in yellow_benefits
+        ]
+
         return {
             "proposal": architecture_proposal,
-            "black_hat_critique": [
-                {"risk": f.risk_type, "severity": f.severity, "desc": f.description}
-                for f in black_findings
-            ],
-            "yellow_hat_defense": [
-                {"benefit": b.metric, "impact": b.impact, "feasibility": b.feasibility}
-                for b in yellow_benefits
-            ],
+            "black_critique": black_list,
+            "black_hat_critique": black_list,
+            "green_counterproposals": green_list,
+            "yellow_hat_defense": yellow_list,
+            "blue_resolution": {
+                "verdict": "APROBADO_CON_CONDICIONES" if black_findings else "APROBADO",
+                "summary": "Debate concluido equilibrando resiliencia frente a riesgos con valor técnico de modernización.",
+                "selected_architecture": proposals[0].name if proposals else "Arquitectura Modular Pragmática",
+                "consensus": (
+                    "Debate concluido. El Sombrero Azul dictamina equilibrar la robustez ante los riesgos "
+                    "señalados por el Sombrero Negro con las alternativas del Sombrero Verde y los beneficios del Sombrero Amarillo."
+                ),
+            },
             "synthesis": (
                 "Debate concluido. El Sombrero Azul dictamina equilibrar la robustez ante los riesgos "
                 "señalados por el Sombrero Negro con los beneficios de rendimiento aportados por el Sombrero Amarillo."
@@ -159,3 +177,46 @@ class SixHatsOrchestrator:
         from six_hats.tools.ponytail_rules import audit_ponytail
         report = audit_ponytail(code_content, max_acceptable_bloat=max_acceptable_bloat)
         return report.model_dump()
+
+    async def run_agent(
+        self,
+        hat_name: str,
+        code_content: str,
+        is_diff: bool = False,
+        task_context: str = "",
+        filepath: str = "source.py",
+    ) -> Any:
+        """Ejecuta un agente individual por nombre de sombrero con su contexto necesario."""
+        normalized = hat_name.strip().lower()
+        es_to_en = {
+            "blanco": "white",
+            "rojo": "red",
+            "negro": "black",
+            "amarillo": "yellow",
+            "verde": "green",
+            "azul": "blue",
+        }
+        hat = es_to_en.get(normalized, normalized)
+
+        if hat == "white":
+            return await self.runner.execute_white_hat(code_content, is_diff=is_diff, filename=filepath)
+        elif hat == "green":
+            white_data = await self.runner.execute_white_hat(code_content, is_diff=is_diff, filename=filepath)
+            return await self.runner.execute_green_hat(white_data, code_content, task_context)
+        elif hat == "black":
+            white_data = await self.runner.execute_white_hat(code_content, is_diff=is_diff, filename=filepath)
+            green_proposals = await self.runner.execute_green_hat(white_data, code_content, task_context)
+            return await self.runner.execute_black_hat(white_data, green_proposals, code_content)
+        elif hat == "yellow":
+            white_data = await self.runner.execute_white_hat(code_content, is_diff=is_diff, filename=filepath)
+            green_proposals = await self.runner.execute_green_hat(white_data, code_content, task_context)
+            return await self.runner.execute_yellow_hat(white_data, green_proposals, code_content)
+        elif hat == "red":
+            white_data = await self.runner.execute_white_hat(code_content, is_diff=is_diff, filename=filepath)
+            green_proposals = await self.runner.execute_green_hat(white_data, code_content, task_context)
+            return await self.runner.execute_red_hat(white_data, green_proposals, code_content)
+        elif hat == "blue":
+            return await self.run_full_cycle(code_content, is_diff=is_diff, task_context=task_context, filepath=filepath)
+        else:
+            raise ValueError(f"Sombrero no reconocido: «{hat_name}». Opciones válidas: white, red, black, yellow, green, blue.")
+

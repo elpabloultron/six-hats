@@ -70,6 +70,8 @@ class SixHatsConsensus(BaseModel):
     applied_mitigations: List[str] = Field(default_factory=list, description="Mitigaciones a los riesgos del Sombrero Negro")
     selected_architecture: str = Field(description="Arquitectura o alternativa seleccionada")
     code_patch: Optional[str] = Field(None, description="Unified diff con la solución final")
+    patch_validated: bool = Field(default=False, description="Indica si el parche fue verificado sintácticamente con éxito")
+    patch_syntax_error: Optional[str] = Field(default=None, description="Error sintáctico detectado al validar el parche si ocurrió")
     ponytail_veto_applied: bool = Field(default=False, description="Indica si se aplicó veto de simplicidad de Ponytail")
     agent_guidance: Optional[str] = Field(
         default=None,

@@ -49,6 +49,11 @@ def get_file_diff_stats(diff_text: str) -> Tuple[int, int]:
     for line in diff_text.splitlines():
         if line.startswith("+++") or line.startswith("---"):
             continue
+        elif line.startswith("+"):
+            lines_added += 1
+        elif line.startswith("-"):
+            lines_deleted += 1
+
     return lines_added, lines_deleted
 
 

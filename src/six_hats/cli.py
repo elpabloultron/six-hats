@@ -16,6 +16,7 @@ from six_hats.tools.exporter import export_tools_by_format
 from six_hats.tools.plugin_installer import install_plugin
 from six_hats.tools.html_reporter import export_to_html_file
 from six_hats.tools.graph_analyzer import detect_codebase_graph
+from six_hats.tools.batch_scanner import run_batch_scan
 
 console = Console()
 
@@ -58,6 +59,12 @@ def review(
         target_name = filepath or "git_diff.patch"
     elif filepath:
         target_path = Path(filepath)
+        if target_path.is_dir():
+            if not json_mode:
+                console.print(Panel.fit(f"[bold blue]Directorio detectado: Iniciando escaneo recursivo por lotes en {filepath}...[/bold blue]"))
+            report = asyncio.run(run_batch_scan(target_path))
+            _render_batch_scan_report(report, json_mode=json_mode, fail_on=fail_on)
+            return
         code_content = target_path.read_text(encoding="utf-8", errors="replace")
         is_diff = target_path.suffix in [".diff", ".patch"]
         target_name = filepath
@@ -227,6 +234,204 @@ def review(
 
 
 @cli.command()
+@click.argument("hat", type=click.Choice(
+    ["white", "red", "black", "yellow", "green", "blue", "blanco", "rojo", "negro", "amarillo", "verde", "azul"],
+    case_sensitive=False,
+))
+@click.argument("filepath", type=click.Path(exists=True), required=False)
+@click.option("--git-diff", "-g", is_flag=True, help="Usa el git diff del repositorio actual como entrada.")
+@click.option("--context", "-c", default="", help="Contexto adicional del requerimiento o problema.")
+@click.option("--json-output", "--json", "json_mode", is_flag=True, help="Emite salida estructurada pura en JSON.")
+@click.option("--fail-on", type=click.Choice(["CRITICAL", "HIGH", "MEDIUM", "BLOAT"], case_sensitive=False), default=None, help="Falla con código 1 ante hallazgos de severidad especificada.")
+def agent(
+    hat: str,
+    filepath: str | None,
+    git_diff: bool,
+    context: str,
+    json_mode: bool,
+    fail_on: str | None,
+):
+    """Ejecuta un agente especializado individual de los Seis Sombreros de Edward de Bono."""
+    if git_diff:
+        code_content = get_git_diff(filepath)
+        if not code_content.strip():
+            if not json_mode:
+                console.print("[yellow]No se detectaron cambios en el git diff actual.[/yellow]")
+            else:
+                click.echo(json.dumps({"status": "no_diff"}))
+            return
+        is_diff = True
+        target_name = filepath or "git_diff.patch"
+    elif filepath:
+        target_path = Path(filepath)
+        code_content = target_path.read_text(encoding="utf-8", errors="replace")
+        is_diff = target_path.suffix in [".diff", ".patch"]
+        target_name = filepath
+    else:
+        if not json_mode:
+            console.print("[red]Error: Debe especificar un archivo o usar la opción --git-diff.[/red]")
+        sys.exit(1)
+
+    normalized = hat.strip().lower()
+    es_to_en = {
+        "blanco": "white",
+        "rojo": "red",
+        "negro": "black",
+        "amarillo": "yellow",
+        "verde": "green",
+        "azul": "blue",
+    }
+    hat_key = es_to_en.get(normalized, normalized)
+
+    orchestrator = SixHatsOrchestrator()
+    result = asyncio.run(
+        orchestrator.run_agent(
+            hat_name=hat_key,
+            code_content=code_content,
+            is_diff=is_diff,
+            task_context=context,
+            filepath=target_name,
+        )
+    )
+
+    # 1. Salida JSON pura si se solicita
+    if json_mode:
+        if hasattr(result, "model_dump"):
+            serialized = result.model_dump()
+        elif isinstance(result, list):
+            serialized = [item.model_dump() if hasattr(item, "model_dump") else item for item in result]
+        else:
+            serialized = result
+        click.echo(json.dumps(serialized, indent=2, ensure_ascii=False))
+        return
+
+    # 2. Renderizado interactivo Rich según el sombrero ejecutado
+    if hat_key == "white":
+        table = Table(title="⚪ Sombrero Blanco: Telemetría, Hechos y Métricas Estáticas", border_style="white")
+        table.add_column("Métrica / Indicador", style="bold")
+        table.add_column("Valor Calculado")
+        table.add_row("Archivo / Objetivo", target_name)
+        table.add_row("Complejidad Ciclomática (McCabe)", str(result.cyclomatic_complexity))
+        table.add_row("Complejidad Cognitiva (SonarSource)", str(result.cognitive_complexity))
+        table.add_row("Índice de Mantenibilidad (SEI/Radon)", f"{result.maintainability_index} / 100")
+        table.add_row("Líneas Añadidas / Eliminadas", f"+{result.lines_added} / -{result.lines_deleted}")
+        if result.git_churn_score:
+            churn_style = "bold red" if result.historical_risk == "HIGH_HOTSPOT" else "yellow"
+            table.add_row("Volatilidad Histórica Git", f"[{churn_style}]{result.git_churn_score}[/{churn_style}]")
+        if result.coverage_summary:
+            table.add_row("Cobertura Real de Tests", result.coverage_summary)
+        table.add_row("Símbolos Detectados", ", ".join(result.symbols_affected[:8]) or "Ninguno")
+        table.add_row("Dependencias / Imports", ", ".join(result.dependencies) or "Ninguna")
+        console.print(table)
+
+    elif hat_key == "green":
+        table = Table(title="🟢 Sombrero Verde: Alternativas Arquitectónicas e Innovación", border_style="green")
+        table.add_column("Propuesta / Patrón", style="bold green")
+        table.add_column("Paradigma")
+        table.add_column("Descripción")
+        table.add_column("Compromiso (Trade-off)", style="yellow")
+        for p in result:
+            table.add_row(p.name, p.paradigm, p.description, p.tradeoff)
+        console.print(table)
+
+    elif hat_key == "black":
+        table = Table(title="⚫ Sombrero Negro: Auditoría Adversarial de Riesgos y Seguridad", border_style="red")
+        table.add_column("Severidad", style="bold")
+        table.add_column("Vulnerabilidad / Riesgo")
+        table.add_column("Ubicación")
+        table.add_column("Remediación Obligatoria")
+        for f in result:
+            color = "red" if f.severity == "CRITICAL" else ("yellow" if f.severity == "HIGH" else "blue")
+            table.add_row(f"[{color}]{f.severity}[/{color}]", f.risk_type, f.location, f.remediation)
+        console.print(table)
+
+    elif hat_key == "yellow":
+        table = Table(title="🟡 Sombrero Amarillo: Análisis Asintótico Big-O y Valor Tangible", border_style="yellow")
+        table.add_column("Métrica / Oportunidad", style="bold yellow")
+        table.add_column("Impacto Proyectado")
+        table.add_column("Viabilidad", style="green")
+        for b in result:
+            table.add_row(b.metric, b.impact, b.feasibility)
+        console.print(table)
+
+    elif hat_key == "red":
+        console.print(Panel.fit(f"[bold magenta]🔴 Sombrero Rojo: DX, Ergonomía y Filtro Ponytail:[/bold magenta] {target_name}"))
+        score_color = "green" if result.bloat_score <= 20 else ("yellow" if result.bloat_score <= 40 else "red")
+        summary_panel = (
+            f"[bold]Carga Cognitiva Subjetiva:[/bold] {result.cognitive_load_score}\n"
+            f"[bold]Sensación Visceral (Gut Feeling):[/bold] {result.gut_feeling}\n"
+            f"[bold]Ergonomía a las 3:00 AM:[/bold] {result.ergonomics}\n"
+            f"[bold]Índice de Sobreingeniería (Bloat Score):[/bold] [{score_color}]{result.bloat_score} %[/{score_color}]\n"
+            f"[bold]Veredicto Ponytail:[/bold] {result.ponytail_verdict}\n"
+            f"[bold]Saturación Visual (Clutter):[/bold] {result.visual_clutter_score} / 100"
+        )
+        console.print(Panel(summary_panel, title="Evaluación Psicometríca y DX", border_style="magenta"))
+        if result.ladder_violations:
+            viol_table = Table(title="Violaciones a la Escalera de la Pereza Ponytail", border_style="magenta")
+            viol_table.add_column("Infracción")
+            for v in result.ladder_violations:
+                viol_table.add_row(v)
+            console.print(viol_table)
+        if result.lexical_confusion_warnings:
+            conf_table = Table(title="Advertencias de Confusión Léxica (RapidFuzz)", border_style="yellow")
+            conf_table.add_column("Advertencia")
+            for w in result.lexical_confusion_warnings:
+                conf_table.add_row(w)
+            console.print(conf_table)
+
+    elif hat_key == "blue":
+        verdict_style = "bold green" if result.consensus.verdict == "APPROVE" else "bold red"
+        veto_status = "[bold red]ACTIVADO (Código podado)[/bold red]" if result.consensus.ponytail_veto_applied else "[green]No requerido[/green]"
+        mitigations_txt = "\n".join(f"• {m}" for m in result.consensus.applied_mitigations)
+        blue_content = (
+            f"[bold]Veredicto:[/bold] [{verdict_style}]{result.consensus.verdict}[/{verdict_style}]\n"
+            f"[bold]Arquitectura Seleccionada:[/bold] {result.consensus.selected_architecture}\n"
+            f"[bold]Veto de Simplicidad Ponytail:[/bold] {veto_status}\n\n"
+            f"[bold]Síntesis Ejecutiva:[/bold]\n{result.consensus.summary}\n\n"
+            f"[bold]Mitigaciones Aplicadas:[/bold]\n{mitigations_txt}"
+        )
+        console.print(Panel(blue_content, title="🔵 Sombrero Azul: Síntesis y Dictamen Final", border_style="cyan"))
+        if result.consensus.code_patch:
+            console.print("\n[bold cyan]Parche de Mitigación Generado (Unified Diff Real):[/bold cyan]")
+            syntax = Syntax(result.consensus.code_patch, "diff", theme="monokai", line_numbers=False)
+            console.print(syntax)
+
+    # 3. Control de calidad CI/CD (--fail-on)
+    if fail_on:
+        fail_on_upper = fail_on.upper()
+        failed = False
+        reason = ""
+
+        if hat_key == "black":
+            severities = {f.severity for f in result}
+            if fail_on_upper == "CRITICAL" and "CRITICAL" in severities:
+                failed, reason = True, "Se detectaron hallazgos de severidad CRITICAL."
+            elif fail_on_upper == "HIGH" and severities.intersection({"CRITICAL", "HIGH"}):
+                failed, reason = True, "Se detectaron hallazgos de severidad HIGH o CRITICAL."
+            elif fail_on_upper == "MEDIUM" and severities.intersection({"CRITICAL", "HIGH", "MEDIUM"}):
+                failed, reason = True, "Se detectaron hallazgos de severidad MEDIUM, HIGH o CRITICAL."
+        elif hat_key == "red":
+            if fail_on_upper == "BLOAT" and result.bloat_score > 25.0:
+                failed, reason = True, f"Índice de sobreingeniería Ponytail ({result.bloat_score} %) superó el 25 %."
+        elif hat_key == "blue":
+            severities = {f.severity for f in result.black}
+            if fail_on_upper == "CRITICAL" and "CRITICAL" in severities:
+                failed, reason = True, "Se detectaron hallazgos de severidad CRITICAL."
+            elif fail_on_upper == "HIGH" and severities.intersection({"CRITICAL", "HIGH"}):
+                failed, reason = True, "Se detectaron hallazgos de severidad HIGH o CRITICAL."
+            elif fail_on_upper == "MEDIUM" and severities.intersection({"CRITICAL", "HIGH", "MEDIUM"}):
+                failed, reason = True, "Se detectaron hallazgos de severidad MEDIUM, HIGH o CRITICAL."
+            elif fail_on_upper == "BLOAT" and result.red.bloat_score > 25.0:
+                failed, reason = True, f"Índice de sobreingeniería Ponytail ({result.red.bloat_score} %) superó el 25 %."
+
+        if failed:
+            if not json_mode:
+                console.print(f"\n[bold red]✖ FALLO EN CONTROL DE CALIDAD CI/CD (--fail-on {fail_on}):[/bold red] {reason}")
+            sys.exit(1)
+
+
+
+@cli.command()
 @click.argument("filepath", type=click.Path(exists=True))
 @click.option("--threshold", "-t", default=25.0, help="Umbral máximo admisible de sobreingeniería (%).")
 @click.option("--json-output", "--json", "json_mode", is_flag=True, help="Emite el reporte en formato JSON puro.")
@@ -277,6 +482,89 @@ def ponytail(filepath: str, threshold: float, json_mode: bool, fail_on_bloat: bo
         if not json_mode:
             console.print(f"\n[bold red]✖ FALLO: El código excede el umbral de sobreingeniería ({report.bloat_score} % > {threshold} %)[/bold red]")
         sys.exit(1)
+
+
+def _render_batch_scan_report(report, json_mode: bool, fail_on: str | None):
+    """Renderiza el informe de escaneo recursivo por lotes en Rich o formato JSON."""
+    if json_mode:
+        data = report.model_dump(mode="json", exclude={"file_summaries": {"__all__": {"result"}}})
+        click.echo(json.dumps(data, indent=2, ensure_ascii=False))
+        return
+
+    score_color = "green" if report.avg_bloat_score <= 20 else ("yellow" if report.avg_bloat_score <= 40 else "red")
+    summary_txt = (
+        f"[bold]Directorio Analizado:[/bold] {report.directory}\n"
+        f"[bold]Total de Archivos Analizados:[/bold] {report.total_files_scanned}\n"
+        f"[bold]Líneas de Código Evaluadas:[/bold] {report.total_lines_analyzed}\n"
+        f"[bold]Complejidad Ciclomática Promedio (McCabe):[/bold] {report.avg_cyclomatic_complexity}\n"
+        f"[bold]Complejidad Cognitiva Promedio (SonarSource):[/bold] {report.avg_cognitive_complexity}\n"
+        f"[bold]Índice de Mantenibilidad Promedio:[/bold] {report.avg_maintainability_index} / 100\n"
+        f"[bold]Sobreingeniería Promedio (Bloat Score):[/bold] [{score_color}]{report.avg_bloat_score} %[/{score_color}]\n"
+        f"[bold]Vulnerabilidades Críticas Totales:[/bold] [{'red' if report.critical_vulnerabilities_count > 0 else 'green'}]{report.critical_vulnerabilities_count}[/]\n"
+        f"[bold]Vulnerabilidades Altas Totales:[/bold] [{'yellow' if report.high_vulnerabilities_count > 0 else 'green'}]{report.high_vulnerabilities_count}[/]"
+    )
+    console.print(Panel(summary_txt, title="Resumen Global de Escaneo (Seis Sombreros)", border_style="cyan"))
+
+    if report.hotspots:
+        table = Table(title="Hotspots Críticos del Repositorio (Archivos de Mayor Atención)", border_style="red")
+        table.add_column("Archivo", style="bold")
+        table.add_column("Veredicto")
+        table.add_column("Críticos", style="red")
+        table.add_column("Altos", style="yellow")
+        table.add_column("Cognitiva", style="cyan")
+        table.add_column("Bloat Ponytail", style="magenta")
+
+        for h in report.hotspots:
+            v_style = "bold green" if h["verdict"] == "APPROVE" else "bold red"
+            table.add_row(
+                h["filepath"],
+                f"[{v_style}]{h['verdict']}[/{v_style}]",
+                str(h["critical"]),
+                str(h["high"]),
+                str(h["cognitive"]),
+                f"{h['bloat']} %",
+            )
+        console.print(table)
+    else:
+        console.print("[green]✓ No se detectaron hotspots críticos en los archivos analizados.[/green]")
+
+    if fail_on:
+        fail_upper = fail_on.upper()
+        failed = False
+        reason = ""
+        if fail_upper == "CRITICAL" and report.critical_vulnerabilities_count > 0:
+            failed, reason = True, f"Se detectaron {report.critical_vulnerabilities_count} vulnerabilidad(es) CRITICAL."
+        elif fail_upper == "HIGH" and (report.critical_vulnerabilities_count > 0 or report.high_vulnerabilities_count > 0):
+            failed, reason = True, "Se detectaron hallazgos de severidad HIGH o CRITICAL."
+        elif fail_upper == "BLOAT" and report.avg_bloat_score > 25.0:
+            failed, reason = True, f"El promedio de sobreingeniería ({report.avg_bloat_score} %) superó el 25 %."
+
+        if failed:
+            if not json_mode:
+                console.print(f"\n[bold red]✖ FALLO EN CONTROL DE CALIDAD CI/CD (--fail-on {fail_on}):[/bold red] {reason}")
+            sys.exit(1)
+
+
+@cli.command()
+@click.argument("directory", type=click.Path(exists=True, file_okay=False, dir_okay=True), default=".")
+@click.option("--concurrency", "-j", default=4, help="Número de análisis concurrentes en paralelo.")
+@click.option("--max-files", default=200, help="Límite máximo de archivos a procesar.")
+@click.option("--json-output", "--json", "json_mode", is_flag=True, help="Emite salida estructurada pura en JSON.")
+@click.option("--fail-on", type=click.Choice(["CRITICAL", "HIGH", "BLOAT"], case_sensitive=False), default=None, help="Falla si algún archivo presenta hallazgos de severidad especificada.")
+def scan(
+    directory: str,
+    concurrency: int,
+    max_files: int,
+    json_mode: bool,
+    fail_on: str | None,
+):
+    """Escanea recursivamente un repositorio o directorio completo evaluando todos sus archivos."""
+    target_path = Path(directory)
+    if not json_mode:
+        console.print(Panel.fit(f"[bold blue]Iniciando escaneo recursivo de Seis Sombreros en:[/bold blue] {target_path.resolve()}"))
+
+    report = asyncio.run(run_batch_scan(target_path, concurrency=concurrency, max_files=max_files))
+    _render_batch_scan_report(report, json_mode=json_mode, fail_on=fail_on)
 
 
 @cli.command()

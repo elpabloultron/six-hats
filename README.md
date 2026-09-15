@@ -132,37 +132,66 @@ El analizador sintáctico del Sombrero Blanco detecta automáticamente el lengua
 
 El comando `six-hats` (o su alias `hats`) ofrece herramientas enriquecidas con tablas de terminal, paneles coloreados y modos de integración continua:
 
-### Revisión completa de un archivo
-
+### Revisión completa de un archivo o directorio
 ```bash
+# Revisar un archivo individual
 six-hats review ruta/al/archivo.py
-six-hats review backend/handler.go
-six-hats review frontend/App.tsx
+
+# Si se especifica un directorio, review activa automáticamente el escaneo por lotes
+six-hats review src/
+```
+
+### Escaneo recursivo de repositorios completos (`scan`)
+Audita carpetas completas en paralelo, calcula promedios de complejidad ciclomática, cognitiva, mantenibilidad y sobreingeniería, y destaca los *hotspots* críticos:
+```bash
+# Escaneo del directorio actual o subdirectorio
+six-hats scan src/
+
+# Control de concurrencia y salida estructurada para CI/CD
+six-hats scan src/ --concurrency 8 --json
+six-hats scan src/ --fail-on critical
+```
+
+### Invocación focalizada de agentes por sombrero (`agent`)
+Ejecuta la perspectiva de un único sombrero de forma aislada:
+```bash
+# Sombrero Blanco: Telemetría objetiva, AST y métricas McCabe/Sonar
+six-hats agent white src/models.py
+
+# Sombrero Negro: Auditoría adversarial, fallos CWE/OWASP e hipótesis de rotura
+six-hats agent black src/auth.py --fail-on critical
+
+# Sombrero Rojo: Carga cognitiva, DX a las 3:00 AM y antipatrones Ponytail
+six-hats agent red src/service.py
+
+# Sombrero Amarillo: Análisis asintótico Big-O y valor tangible
+six-hats agent yellow src/pipeline.py
+
+# Sombrero Verde: Propuestas arquitectónicas divergentes (GoF, Result, Zero-Copy)
+six-hats agent green src/core.py
+
+# Sombrero Azul: Consenso, mitigaciones y generación de parche unificado
+six-hats agent blue src/worker.py
 ```
 
 ### Revisión del `git diff` activo del repositorio
-
 ```bash
 six-hats review --git-diff
 ```
 
 ### Auditoría de sobreingeniería Ponytail (*Escalera de la Pereza*)
-
 Audita un archivo para detectar código redundante, fábricas innecesarias, envoltorios vacíos y violaciones del principio YAGNI:
-
 ```bash
 six-hats ponytail ruta/al/archivo.py
 six-hats ponytail ruta/al/archivo.py --json
 ```
 
 ### Debate dialéctico sobre una propuesta arquitectónica
-
 ```bash
 six-hats debate "Migrar el pipeline de ingesta a Kafka distribuido"
 ```
 
 ### Iniciar el servidor MCP en modo STDIO
-
 ```bash
 six-hats mcp
 ```
@@ -274,11 +303,18 @@ En `~/.gemini/config/mcp_config.json`:
 }
 ```
 
-### Herramientas MCP expuestas
+### Herramientas MCP expuestas (11 herramientas nativas)
 
-* **`six_hats_review`:** Ejecuta el ciclo completo del DAG sobre un diff o archivo políglota, retornando telemetría de AST, propuestas del Sombrero Verde, auditoría del Sombrero Negro, beneficios del Sombrero Amarillo, evaluación DX/Ponytail del Sombrero Rojo y veredicto con parche unificado y directrices (`agent_guidance`) para la IA anfitriona.
-* **`six_hats_debate`:** Lanza una confrontación dialéctica entre el Sombrero Negro y el Sombrero Verde moderada por el Sombrero Azul sobre una propuesta técnica.
-* **`six_hats_quick_check`:** Análisis expedito sobre la tríada crítica: Blanco (Hechos), Negro (Riesgos) y Amarillo (Valor).
+* **`six_hats_review`:** Ejecuta el ciclo completo del DAG sobre un diff o archivo políglota, retornando telemetría de AST, propuestas del Sombrero Verde, auditoría del Sombrero Negro, beneficios del Sombrero Amarillo, evaluación DX/Ponytail del Sombrero Rojo y veredicto con parche unificado verificado sintácticamente y directrices (`agent_guidance`).
+* **`six_hats_batch_scan`:** Ejecuta un escaneo recursivo completo sobre todos los archivos de un directorio o repositorio en paralelo, calculando métricas promedio y ordenando los *hotspots* críticos.
+* **`six_hats_white_hat`:** Sombrero Blanco individual. Hechos empíricos, AST, complejidad ciclomática de McCabe, cognitiva de SonarSource y dependencias.
+* **`six_hats_green_hat`:** Sombrero Verde individual. Alternativas arquitectónicas divergentes (GoF, monadas Result, reactivo o zero-copy).
+* **`six_hats_black_hat`:** Sombrero Negro individual. Auditoría adversarial, escaneo CWE/OWASP y riesgos de regresión.
+* **`six_hats_yellow_hat`:** Sombrero Amarillo individual. Oportunidades de aceleración Big-O y modernización idiomática de sintaxis.
+* **`six_hats_red_hat`:** Sombrero Rojo individual. Ergonomía psicométrica a las 3:00 AM, confusión léxica y antipatrones Ponytail.
+* **`six_hats_blue_hat`:** Sombrero Azul individual. Síntesis metacognitiva, arbitraje, veto de sobreingeniería y parche unificado.
+* **`six_hats_debate`:** Confrontación dialéctica estricta entre Sombrero Negro y Sombrero Verde moderada por el Sombrero Azul.
+* **`six_hats_quick_check`:** Evaluación rápida focalizada en la tríada crítica: Blanco (Hechos), Negro (Riesgos) y Amarillo (Valor).
 * **`six_hats_ponytail_audit`:** Auditoría estricta contra la Escalera de la Pereza de Ponytail para detectar sobreingeniería y código superfluo.
 
 ### Prompts MCP Oficiales expuestos

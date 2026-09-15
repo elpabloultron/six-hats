@@ -57,6 +57,92 @@ async def six_hats_ponytail_audit(code: str, threshold: float = 25.0) -> str:
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
+@app.tool()
+async def six_hats_white_hat(code_content: str, is_diff: bool = False, filename: str = "source.py") -> str:
+    """⚪ Sombrero Blanco: Extrae hechos cuantitativos, AST, complejidad ciclomática (McCabe), cognitiva (SonarSource) y dependencias.
+
+    Args:
+        code_content: Código fuente o diff a evaluar.
+        is_diff: True si es un diff unificado de git, False si es código completo.
+        filename: Nombre del archivo para contexto de métricas y análisis sintáctico.
+    """
+    result = await orchestrator.run_agent("white", code_content=code_content, is_diff=is_diff, filepath=filename)
+    return json.dumps(result.model_dump(), indent=2, ensure_ascii=False)
+
+
+@app.tool()
+async def six_hats_green_hat(code_content: str, task_context: str = "") -> str:
+    """🟢 Sombrero Verde: Genera alternativas arquitectónicas divergentes (GoF, monadas Result, reactivo o zero-copy).
+
+    Args:
+        code_content: Código fuente base o propuesta sobre la cual innovar.
+        task_context: Contexto o requerimiento para guiar la exploración creativa.
+    """
+    result = await orchestrator.run_agent("green", code_content=code_content, task_context=task_context)
+    return json.dumps([p.model_dump() for p in result], indent=2, ensure_ascii=False)
+
+
+@app.tool()
+async def six_hats_black_hat(code_content: str) -> str:
+    """⚫ Sombrero Negro: Ejecuta auditoría adversarial implacable, escaneo CWE/OWASP, complejidad extrema y riesgos de regresión.
+
+    Args:
+        code_content: Código fuente a someter a análisis destructivo y de seguridad.
+    """
+    result = await orchestrator.run_agent("black", code_content=code_content)
+    return json.dumps([f.model_dump() for f in result], indent=2, ensure_ascii=False)
+
+
+@app.tool()
+async def six_hats_yellow_hat(code_content: str) -> str:
+    """🟡 Sombrero Amarillo: Analiza valor tangible, oportunidades de aceleración Big-O y modernización idiomática (Python 3.10+).
+
+    Args:
+        code_content: Código fuente a evaluar en busca de optimizaciones y beneficios.
+    """
+    result = await orchestrator.run_agent("yellow", code_content=code_content)
+    return json.dumps([b.model_dump() for b in result], indent=2, ensure_ascii=False)
+
+
+@app.tool()
+async def six_hats_red_hat(code_content: str) -> str:
+    """🔴 Sombrero Rojo: Mide ergonomía a las 3:00 AM, confusión léxica, saturación visual y aplica la Escalera de la Pereza de Ponytail.
+
+    Args:
+        code_content: Código fuente a evaluar psicométricamente y por sobreingeniería.
+    """
+    result = await orchestrator.run_agent("red", code_content=code_content)
+    return json.dumps(result.model_dump(), indent=2, ensure_ascii=False)
+
+
+@app.tool()
+async def six_hats_blue_hat(code_content: str, task_context: str = "", filepath: str = "solucion.py") -> str:
+    """🔵 Sombrero Azul: Síntesis metacognitiva completa, arbitraje de controversias, veto Ponytail y generación de parche unificado.
+
+    Args:
+        code_content: Código fuente original a conciliar y parchar.
+        task_context: Contexto de la deliberación o requerimiento.
+        filepath: Ruta del archivo destino para el unified diff.
+    """
+    result = await orchestrator.run_agent("blue", code_content=code_content, task_context=task_context, filepath=filepath)
+    return json.dumps(result.model_dump(), indent=2, ensure_ascii=False)
+
+
+@app.tool()
+async def six_hats_batch_scan(directory_path: str, max_files: int = 100, concurrency: int = 4) -> str:
+    """Ejecuta un escaneo recursivo completo de Seis Sombreros sobre todos los archivos de un directorio o repositorio.
+
+    Args:
+        directory_path: Ruta al directorio raíz a auditar (ej. './src').
+        max_files: Límite máximo de archivos a procesar (por defecto 100).
+        concurrency: Número de tareas simultáneas de análisis en paralelo (por defecto 4).
+    """
+    from six_hats.tools.batch_scanner import run_batch_scan
+
+    report = await run_batch_scan(directory=directory_path, concurrency=concurrency, max_files=max_files, orchestrator=orchestrator)
+    return json.dumps(report.model_dump(mode="json", exclude={"file_summaries": {"__all__": {"result"}}}), indent=2, ensure_ascii=False)
+
+
 # ============================================================================
 # Prompts MCP Nativos (Estándar Oficial Model Context Protocol)
 # Permiten a la IA anfitriona (Antigravity, Claude, Cursor, Ollama) asumir

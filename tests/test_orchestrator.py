@@ -464,18 +464,21 @@ def test_export_tools_schemas():
     )
 
     openai_tools = export_openai_tools()
-    assert len(openai_tools) == 4
+    assert len(openai_tools) >= 10
     assert all(t["type"] == "function" for t in openai_tools)
     names = [t["function"]["name"] for t in openai_tools]
     assert "six_hats_review" in names
     assert "six_hats_ponytail_audit" in names
+    assert "six_hats_white_hat" in names
+    assert "six_hats_black_hat" in names
+    assert "six_hats_batch_scan" in names
 
     claude_tools = export_claude_tools()
-    assert len(claude_tools) == 4
+    assert len(claude_tools) >= 10
     assert all("input_schema" in t for t in claude_tools)
 
     mcp_tools = export_mcp_tools()
-    assert len(mcp_tools) == 4
+    assert len(mcp_tools) >= 10
     assert all("inputSchema" in t for t in mcp_tools)
 
     chatml = build_hermes_chatml_block()

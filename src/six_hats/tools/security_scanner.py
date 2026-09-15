@@ -54,6 +54,8 @@ class SecurityAstVisitor(ast.NodeVisitor):
                         risk_type="Inyección de Código Arbitrario (CWE-94 / CWE-95)",
                         location=f"Línea {node.lineno}: {node.func.id}(...)",
                         description=f"Invocación directa de «{node.func.id}()». Permite la ejecución de instrucciones arbitrarias por inyección de cadenas.",
+                        cwe_owasp_id="CWE-94",
+                        remediation="Evitar ejecución dinámica; utilizar serialización estructurada o intérpretes de expresiones restringidos.",
                     )
                 )
 
@@ -67,6 +69,8 @@ class SecurityAstVisitor(ast.NodeVisitor):
                             risk_type="Inyección de Comandos Shell (CWE-78 / Bandit B602)",
                             location=f"Línea {node.lineno}: subprocess.{node.func.attr}(..., shell=True)",
                             description="La bandera shell=True ejecuta comandos a través de la shell del sistema, exponiendo el proceso a inyección de comandos.",
+                            cwe_owasp_id="CWE-78",
+                            remediation="Pasar argumentos como lista y eliminar shell=True.",
                         )
                     )
 
@@ -80,6 +84,8 @@ class SecurityAstVisitor(ast.NodeVisitor):
                         risk_type="Deserialización Insegura de Objetos (CWE-502 / Bandit B301)",
                         location=f"Línea {node.lineno}: pickle.{node.func.attr}(...)",
                         description="Deserializar streams no confiables mediante pickle permite la ejecución arbitraria de código durante el unpickling.",
+                        cwe_owasp_id="CWE-502",
+                        remediation="Utilizar formatos declarativos seguros como JSON, Protocol Buffers o MessagePack.",
                     )
                 )
             # yaml.load sin Loader seguro
@@ -95,6 +101,8 @@ class SecurityAstVisitor(ast.NodeVisitor):
                             risk_type="Deserialización Insegura en YAML (CWE-502 / Bandit B506)",
                             location=f"Línea {node.lineno}: yaml.load(...)",
                             description="Uso de yaml.load sin SafeLoader. Utilice yaml.safe_load() para prevenir instanciación arbitraria de objetos.",
+                            cwe_owasp_id="CWE-502",
+                            remediation="Usar yaml.safe_load(stream).",
                         )
                     )
 
@@ -110,6 +118,8 @@ class SecurityAstVisitor(ast.NodeVisitor):
                     risk_type="Supresión Silenciosa de Excepciones (CWE-391)",
                     location=f"Línea {node.lineno}: except {type_name}: pass",
                     description="El bloque try-except oculta fallos de sistema sin registrarlos ni relanzarlos, enmascarando corrupción de estado.",
+                    cwe_owasp_id="CWE-391",
+                    remediation="Registrar la excepción con logging.exception() o relanzarla.",
                 )
             )
 
